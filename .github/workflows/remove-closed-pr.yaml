@@ -47,7 +47,7 @@ jobs:
           github_sha: ${{ github.sha }}
       - name: Configure docker files
         run: |
-          echo "VERSION=${{ steps.set_version.outputs.version }}" environment/version
+          echo "VERSION=${{ steps.set_version.outputs.version }}" >environment/version
           sed -i 's/registry-docker-hub/registry-robotnik/' compose.yaml
           docker compose config | tee render.yaml
       - name: Delete image

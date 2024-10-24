@@ -63,7 +63,7 @@ jobs:
       - name: Configure docker files
         # if: steps.check_changes.outputs.has_changes == 'true'
         run: |
-          echo "VERSION=${{ steps.set_version.outputs.version }}" environment/version
+          echo "VERSION=${{ steps.set_version.outputs.version }}" >environment/version
           sed -i 's/registry-docker-hub/registry-robotnik/' compose.yaml
           docker compose config
       - name: Build image and push
@@ -105,7 +105,7 @@ jobs:
       - name: Configure docker files
         # if: steps.check_changes.outputs.has_changes == 'true'
         run: |
-          echo "VERSION=${{ steps.set_version.outputs.version }}" environment/version
+          echo "VERSION=${{ steps.set_version.outputs.version }}" >environment/version
           sed -i 's/registry-docker-hub/registry-robotnik/' compose.yaml
           docker compose config
           docker compose pull
