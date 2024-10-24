@@ -13,4 +13,4 @@ services:
         default_cpu_count: "1"
     environment:
       CPU: ${CPU}
-    command: --timeout 3 --cpu 1 --vm-bytes 10
+    # command: --timeout 3 --cpu 1 --vm-bytes 10
