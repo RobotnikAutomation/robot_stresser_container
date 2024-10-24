@@ -1,0 +1,5 @@
+NAME=robot-stresser
+VERSION=0.9.0
+CPU=2
+REGISTRY=docker.io
+PROJECT=library/robotnik

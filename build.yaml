@@ -1,0 +1,16 @@
+---
+services:
+  robot-stresser:
+    image: ${REGISTRY}/${PROJECT}/${NAME}:${VERSION}
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        base_image: ${IMAGE_BASE}
+        image_base_version: ${IMAGE_BASE_VERSION}
+        tini_version: ${TINI_VERSION}
+        version: ${VERSION}
+        default_cpu_count: "1"
+    environment:
+      CPU: ${CPU}
+    command: --timeout 3 --cpu 1 --vm-bytes 10

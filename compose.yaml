@@ -1,0 +1,10 @@
+---
+name: robot-stresser
+include:
+  - path:
+      - ./build.yaml
+    project_directory: .
+    env_file:
+      - ./environment/static
+      - ./environment/version
+      - ./environment/registry-docker-hub

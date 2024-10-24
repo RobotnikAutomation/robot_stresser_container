@@ -1,0 +1,123 @@
+---
+name: Container image creation
+# author: "Guillem Gari <ggari@robotnik.es>"
+# description: |
+#   This workflow builds and pushes a container image to a private registry,
+#   then performs a simple usage test. It's triggered on pushes to deve*,
+#   branches, specific tags, pull requests, or manually.
+
+#   Key features:
+#   - Runs on self-hosted Kubernetes runners
+#   - Builds and pushes Docker image on changes in monitored paths
+#   - Performs a non-crash test using the built image
+#   - Uses dynamic versioning based on Git context
+
+on:
+  push:
+    branches:
+      - main
+      - devel
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+(-rc[0-9]+)?'
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - devel
+  workflow_dispatch:
+
+env:
+  MONITORED_PATHS: >-
+    Dockerfile
+    compose.yaml
+    build.yaml
+    entrypoint.sh
+    environment
+
+jobs:
+  build:
+    name: Build and upload image
+    runs-on:
+      - self-hosted
+      - internal-robotnik
+      - linux
+      - kubernetes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/set-version
+        id: set_version
+        with:
+          github_ref: ${{ github.ref }}
+          github_event_name: ${{ github.event_name }}
+          github_head_ref: ${{ github.head_ref }}
+          github_base_ref: ${{ github.base_ref }}
+          github_sha: ${{ github.sha }}
+      - name: Login to Robotnik Registry
+        if: steps.check_changes.outputs.has_changes == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: registry.robotnik.ws
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Configure docker files
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          echo "VERSION=${{ steps.set_version.outputs.version }}" environment/version
+          sed -i 's/registry-docker-hub/registry-robotnik/' compose.yaml
+          docker compose config
+      - name: Build image and push
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          docker compose build --push
+
+  serial-void-non-crash-test:
+    name: Void serial non crash test
+    needs: [build]
+    runs-on:
+      - self-hosted
+      - internal-robotnik
+      - linux
+      - kubernetes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/check-changes
+        id: check_changes
+        with:
+          monitored_paths: ${{ env.MONITORED_PATHS }}
+      - uses: ./.github/actions/set-version
+        id: set_version
+        with:
+          github_ref: ${{ github.ref }}
+          github_event_name: ${{ github.event_name }}
+          github_head_ref: ${{ github.head_ref }}
+          github_base_ref: ${{ github.base_ref }}
+          github_sha: ${{ github.sha }}
+      - name: Login to Robotnik Registry
+        if: steps.check_changes.outputs.has_changes == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: registry.robotnik.ws
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Configure docker files
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          echo "VERSION=${{ steps.set_version.outputs.version }}" environment/version
+          sed -i 's/registry-docker-hub/registry-robotnik/' compose.yaml
+          docker compose config
+          docker compose pull
+      - name: Void run for 15 seconds
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          cd container
+          cd debug
+          timeout 15 docker compose up -d
+          if [[ $exit_code -eq 124 ]]
+          then
+            echo "No crash, test passed"
+            exit 0
+          fi
+          exit 1
