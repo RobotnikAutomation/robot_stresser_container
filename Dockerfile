@@ -2,6 +2,13 @@ ARG base_image="use-args"
 ARG image_base_version="use-args"
 ARG default_cpu_count="use-args"
 ARG tini_version="use-args"
+ARG tini_path=/usr/local/bin/tini
+
+FROM alpine:latest AS tini-downloader
+ARG tini_version
+ARG tini_url=https://github.com/krallin/tini/releases/download
+RUN wget "${tini_url}/v${tini_version}/tini-static" -O /tini && \
+    chmod +x /tini
 
 FROM ${base_image}:${image_base_version}
 LABEL maintainer="Guillem Gari <ggari@robotnik.es>" \
@@ -14,21 +21,22 @@ LABEL maintainer="Guillem Gari <ggari@robotnik.es>" \
       org.opencontainers.image.authors="Guillem Gari <ggari@robotnik.es>"
 
 ARG default_cpu_count
-ARG tini_version
-ARG tini_path=/usr/local/bin/tini
-ARG tini_url=https://github.com/krallin/tini/releases/download
+ARG tini_path
+
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN true \
+RUN \
+    --mount=\
+type=bind,\
+from=tini-downloader,\
+source=/tini,\
+target=/tmp/tini \
+true \
 	&& apt update \
-	&& apt install -y stress wget \
-	&& wget \
-		"${tini_url}/v${tini_version}/tini-$(dpkg --print-architecture)" \
-		-O ${tini_path} \
-	&& chmod +x ${tini_path} \
+	&& apt install -y stress \
+	&& cp /tmp/tini ${tini_path} \
 	&& cp /usr/bin/stress /usr/bin/ros2 \
-	&& apt remove wget -q -y \
 	&& apt-get clean -q -y \
     && apt-get autoremove -q -y \
     && rm -rf /var/lib/apt/lists/* \
