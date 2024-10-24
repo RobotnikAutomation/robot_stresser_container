@@ -54,20 +54,20 @@ jobs:
           github_base_ref: ${{ github.base_ref }}
           github_sha: ${{ github.sha }}
       - name: Login to Robotnik Registry
-        if: steps.check_changes.outputs.has_changes == 'true'
+        # if: steps.check_changes.outputs.has_changes == 'true'
         uses: docker/login-action@v3
         with:
           registry: registry.robotnik.ws
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Configure docker files
-        if: steps.check_changes.outputs.has_changes == 'true'
+        # if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           echo "VERSION=${{ steps.set_version.outputs.version }}" environment/version
           sed -i 's/registry-docker-hub/registry-robotnik/' compose.yaml
           docker compose config
       - name: Build image and push
-        if: steps.check_changes.outputs.has_changes == 'true'
+        # if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           docker compose build --push
 
@@ -96,21 +96,21 @@ jobs:
           github_base_ref: ${{ github.base_ref }}
           github_sha: ${{ github.sha }}
       - name: Login to Robotnik Registry
-        if: steps.check_changes.outputs.has_changes == 'true'
+        # if: steps.check_changes.outputs.has_changes == 'true'
         uses: docker/login-action@v3
         with:
           registry: registry.robotnik.ws
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Configure docker files
-        if: steps.check_changes.outputs.has_changes == 'true'
+        # if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           echo "VERSION=${{ steps.set_version.outputs.version }}" environment/version
           sed -i 's/registry-docker-hub/registry-robotnik/' compose.yaml
           docker compose config
           docker compose pull
       - name: Void run for 15 seconds
-        if: steps.check_changes.outputs.has_changes == 'true'
+        # if: steps.check_changes.outputs.has_changes == 'true'
         run: |
           cd container
           cd debug
