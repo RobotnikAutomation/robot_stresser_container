@@ -112,8 +112,6 @@ jobs:
       - name: Void run for 15 seconds
         # if: steps.check_changes.outputs.has_changes == 'true'
         run: |
-          cd container
-          cd debug
           timeout 15 docker compose up -d
           if [[ $exit_code -eq 124 ]]
           then
